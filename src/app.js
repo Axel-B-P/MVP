@@ -18,6 +18,11 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+const path = require('path');
+
+// Agregar esto ANTES de las rutas API
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ── Rutas API ─────────────────────────────────────────────────────────────────
 app.use('/api/materias-primas', materiaPrimaRoutes);
 app.use('/api/movimientos', movimientoStockRoutes);
