@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Panadería · Inventario</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#FAFAF7;--surface:#FFFFFF;--border:#E8E5DC;--border2:#D3CFBF;
+  --text:#1C1B17;--muted:#6B6758;--hint:#A09D90;
+  --accent:#C4570A;--accent-light:#FAECE7;--accent-text:#712B13;
+  --warn:#B8860B;--warn-light:#FAEEDA;--warn-text:#633806;
+  --ok:#1D9E75;--ok-light:#E1F5EE;--ok-text:#085041;
+  --radius:10px;--radius-lg:16px;
+}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+
+/* HEADER */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:60px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:34px;height:34px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.logo-text{font-family:'DM Serif Display',serif;font-size:18px;letter-spacing:-.3px}
+.logo-sub{font-size:12px;color:var(--muted);font-weight:400;letter-spacing:.5px;text-transform:uppercase;margin-top:-2px}
+nav{display:flex;gap:4px}
+nav button{background:none;border:none;cursor:pointer;padding:6px 14px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;color:var(--muted);transition:all .15s}
+nav button.active,nav button:hover{background:var(--accent-light);color:var(--accent-text)}
+.btn-refresh{background:none;border:1px solid var(--border2);padding:6px 12px;border-radius:6px;font-family:'Outfit',sans-serif;font-size:12px;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-refresh:hover{border-color:var(--accent);color:var(--accent)}
+
+/* MAIN */
+main{max-width:1100px;margin:0 auto;padding:2rem}
+
+/* STAT CARDS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:2rem}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1rem 1.25rem}
+.stat-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.8px;color:var(--hint);margin-bottom:6px}
+.stat-value{font-family:'DM Serif Display',serif;font-size:28px;color:var(--text)}
+.stat-sub{font-size:12px;color:var(--muted);margin-top:3px}
+.stat.alert-stat{border-color:#F0997B;background:var(--accent-light)}
+.stat.alert-stat .stat-value{color:var(--accent)}
+
+/* SECTION TITLE */
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.section-title{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text)}
+.btn-primary{background:var(--accent);color:#fff;border:none;padding:8px 16px;border-radius:var(--radius);font-family:'Outfit',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:opacity .15s}
+.btn-primary:hover{opacity:.88}
+
+/* ALERTS STRIP */
+.alerts-strip{margin-bottom:1.5rem}
+.alert-card{background:var(--accent-light);border:1px solid #F0997B;border-radius:var(--radius);padding:.75rem 1.25rem;display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.alert-card-name{font-weight:500;font-size:14px;color:var(--accent-text)}
+.alert-card-detail{font-size:12px;color:var(--accent-text);opacity:.8;margin-top:1px}
+.alert-badge{font-size:11px;font-weight:600;background:#D85A30;color:#fff;padding:3px 8px;border-radius:20px;white-space:nowrap}
+
+/* TABLE */
+.table-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--bg);border-bottom:1px solid var(--border)}
+th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.6px;color:var(--hint);padding:.75rem 1.25rem;text-align:left}
+td{padding:.9rem 1.25rem;font-size:14px;border-bottom:.5px solid var(--border)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF7}
+.stock-bar-wrap{display:flex;align-items:center;gap:8px}
+.stock-bar{flex:1;height:5px;background:var(--border);border-radius:3px;overflow:hidden;min-width:60px}
+.stock-bar-fill{height:100%;border-radius:3px;transition:width .3s}
+.tag{font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px;display:inline-block}
+.tag-ok{background:var(--ok-light);color:var(--ok-text)}
+.tag-warn{background:var(--warn-light);color:var(--warn-text)}
+.tag-bad{background:var(--accent-light);color:var(--accent-text)}
+.unit-badge{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace;margin-left:3px}
+td button.icon-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 8px;cursor:pointer;font-size:12px;color:var(--muted);transition:all .15s;font-family:'Outfit',sans-serif}
+td button.icon-btn:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light)}
+
+/* MODAL */
+.modal-backdrop{position:fixed;inset:0;background:rgba(28,27,23,.45);z-index:200;display:flex;align-items:center;justify-content:center}
+.modal{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.75rem;width:460px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-title{font-family:'DM Serif Display',serif;font-size:20px;margin-bottom:1.5rem}
+.field{margin-bottom:1rem}
+.field label{display:block;font-size:12px;font-weight:500;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.field input,.field select{width:100%;padding:8px 12px;border:1px solid var(--border2);border-radius:8px;font-family:'Outfit',sans-serif;font-size:14px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.field input:focus,.field select:focus{border-color:var(--accent)}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:1.5rem}
+.btn-ghost{background:none;border:1px solid var(--border2);color:var(--muted);padding:8px 16px;border-radius:var(--radius);font-family:'Outfit',sans-serif;font-size:13px;cursor:pointer;transition:all .15s}
+.btn-ghost:hover{border-color:var(--text);color:var(--text)}
+.form-error{background:var(--accent-light);color:var(--accent-text);font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:1rem;border:1px solid #F0997B}
+.form-success{background:var(--ok-light);color:var(--ok-text);font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:1rem;border:1px solid #5DCAA5}
+
+/* EMPTY */
+.empty{text-align:center;padding:3rem;color:var(--hint);font-size:14px}
+.loading{text-align:center;padding:3rem;color:var(--hint);font-size:14px;font-family:'DM Mono',monospace;letter-spacing:.5px}
+
+/* TABS */
+.tab-content{display:none}.tab-content.active{display:block}
+
+/* MOV LIST */
+.mov-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1.25rem;margin-bottom:6px;display:flex;align-items:center;gap:1rem}
+.mov-type{width:70px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;padding:3px 8px;border-radius:20px;text-align:center;flex-shrink:0}
+.mov-ingreso{background:var(--ok-light);color:var(--ok-text)}
+.mov-egreso{background:var(--accent-light);color:var(--accent-text)}
+.mov-ajuste{background:var(--warn-light);color:var(--warn-text)}
+.mov-info{flex:1}
+.mov-name{font-size:14px;font-weight:500}
+.mov-detail{font-size:12px;color:var(--muted);margin-top:2px}
+.mov-qty{font-family:'DM Serif Display',serif;font-size:20px;color:var(--text);text-align:right;min-width:60px}
+.mov-qty-unit{font-size:11px;color:var(--hint);font-family:'DM Mono',monospace}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🥖</div>
+    <div>
+      <div class="logo-text">Panadería</div>
+      <div class="logo-sub">Inventario</div>
+    </div>
+  </div>
+  <nav>
+    <button class="active" onclick="switchTab('stock')">Stock</button>
+    <button onclick="switchTab('movimientos')">Movimientos</button>
+    <button onclick="switchTab('alertas')">Alertas <span id="alert-badge" style="display:none;background:var(--accent);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;margin-left:3px"></span></button>
+  </nav>
+  <button class="btn-refresh" onclick="loadAll()">↻ Actualizar</button>
+</header>
+
+<main>
+  <!-- STATS -->
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-label">Materias primas</div><div class="stat-value" id="s-total">—</div></div>
+    <div class="stat"><div class="stat-label">Stock OK</div><div class="stat-value" id="s-ok" style="color:var(--ok)">—</div></div>
+    <div class="stat alert-stat"><div class="stat-label">Con alerta</div><div class="stat-value" id="s-alerta">—</div><div class="stat-sub">stock bajo mínimo</div></div>
+    <div class="stat"><div class="stat-label">Movimientos</div><div class="stat-value" id="s-mov">—</div><div class="stat-sub">registrados</div></div>
+  </div>
+
+  <!-- TAB: STOCK -->
+  <div class="tab-content active" id="tab-stock">
+    <div class="section-header">
+      <div class="section-title">Materias primas</div>
+      <button class="btn-primary" onclick="openModal('nueva-mp')">+ Nueva materia prima</button>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Nombre</th><th>Unidad</th><th>Stock actual</th><th>Mínimo</th><th>Estado</th><th></th>
+        </tr></thead>
+        <tbody id="mp-tbody"><tr><td colspan="6" class="loading">Cargando...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: MOVIMIENTOS -->
+  <div class="tab-content" id="tab-movimientos">
+    <div class="section-header">
+      <div class="section-title">Movimientos de stock</div>
+      <button class="btn-primary" onclick="openModal('nuevo-mov')">+ Registrar movimiento</button>
+    </div>
+    <div id="mov-list"><div class="loading">Cargando...</div></div>
+  </div>
+
+  <!-- TAB: ALERTAS -->
+  <div class="tab-content" id="tab-alertas">
+    <div class="section-header">
+      <div class="section-title">Alertas de stock</div>
+    </div>
+    <div id="alertas-list"><div class="loading">Cargando...</div></div>
+  </div>
+</main>
+
+<!-- MODAL: Nueva materia prima -->
+<div class="modal-backdrop" id="modal-nueva-mp" style="display:none" onclick="closeModal(event,'nueva-mp')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Nueva materia prima</div>
+    <div id="mp-msg"></div>
+    <div class="field"><label>Nombre</label><input id="mp-nombre" placeholder="Ej: Harina 000" /></div>
+    <div class="field"><label>Unidad</label>
+      <select id="mp-unidad">
+        <option value="kg">kg</option><option value="gr">gr</option>
+        <option value="litros">litros</option><option value="ml">ml</option>
+        <option value="unidades">unidades</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Stock inicial</label><input id="mp-stock" type="number" min="0" value="0" /></div>
+      <div class="field"><label>Stock mínimo</label><input id="mp-min" type="number" min="0" value="0" /></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModalById('nueva-mp')">Cancelar</button>
+      <button class="btn-primary" onclick="crearMateriaPrima()">Crear</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Nuevo movimiento -->
+<div class="modal-backdrop" id="modal-nuevo-mov" style="display:none" onclick="closeModal(event,'nuevo-mov')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">Registrar movimiento</div>
+    <div id="mov-msg"></div>
+    <div class="field"><label>Materia prima</label>
+      <select id="mov-mp"></select>
+    </div>
+    <div class="field"><label>Tipo</label>
+      <select id="mov-tipo" onchange="toggleMotivo()">
+        <option value="ingreso">Ingreso</option>
+        <option value="egreso">Egreso</option>
+        <option value="ajuste">Ajuste</option>
+      </select>
+    </div>
+    <div class="field"><label>Cantidad</label><input id="mov-cantidad" type="number" min="0.01" step="0.01" placeholder="0" /></div>
+    <div class="field" id="motivo-field" style="display:none"><label>Motivo <span style="color:var(--accent)">*</span></label><input id="mov-motivo" placeholder="Ej: Corrección por recuento físico" /></div>
+    <div class="field"><label>Usuario</label><input id="mov-usuario" placeholder="Ej: Juan" /></div>
+    <div class="modal-footer">
+      <button class="btn-ghost" onclick="closeModalById('nuevo-mov')">Cancelar</button>
+      <button class="btn-primary" onclick="registrarMovimiento()">Registrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = 'http://localhost:3000/api';
+let materias = [];
+let movimientos = [];
+
+async function api(path, opts){
+  const r = await fetch(API+path, opts);
+  const j = await r.json();
+  if(!r.ok) throw new Error(j.error || 'Error');
+  return j;
+}
+
+async function loadAll(){
+  await Promise.all([loadMaterias(), loadMovimientos()]);
+  updateStats();
+}
+
+async function loadMaterias(){
+  try{
+    const d = await api('/materias-primas');
+    materias = d.data;
+    renderMaterias();
+    renderAlertas();
+    updateAlertBadge();
+  }catch(e){ document.getElementById('mp-tbody').innerHTML=`<tr><td colspan="6" style="color:var(--accent);padding:1.5rem;text-align:center">Error: ${e.message}</td></tr>`; }
+}
+
+async function loadMovimientos(){
+  try{
+    const d = await api('/movimientos?limit=50');
+    movimientos = d.data;
+    renderMovimientos();
+  }catch(e){ document.getElementById('mov-list').innerHTML=`<div style="color:var(--accent);padding:2rem;text-align:center">Error: ${e.message}</div>`; }
+}
+
+function renderMaterias(){
+  const tbody = document.getElementById('mp-tbody');
+  if(!materias.length){ tbody.innerHTML='<tr><td colspan="6" class="empty">Sin materias primas</td></tr>'; return; }
+  tbody.innerHTML = materias.map(m => {
+    const pct = m.stock_minimo > 0 ? Math.min(100, (m.stock_actual / m.stock_minimo) * 50) : 100;
+    const ratio = m.stock_minimo > 0 ? m.stock_actual / m.stock_minimo : 99;
+    const color = ratio < 1 ? '#D85A30' : ratio < 1.5 ? '#EF9F27' : '#1D9E75';
+    const tagCls = ratio < 1 ? 'tag-bad' : ratio < 1.5 ? 'tag-warn' : 'tag-ok';
+    const tagTxt = ratio < 1 ? 'Bajo mínimo' : ratio < 1.5 ? 'Por agotarse' : 'OK';
+    return `<tr>
+      <td style="font-weight:500">${m.nombre}</td>
+      <td><span class="unit-badge">${m.unidad}</span></td>
+      <td>
+        <div class="stock-bar-wrap">
+          <span style="font-family:'DM Mono',monospace;font-size:13px;min-width:40px">${m.stock_actual}</span>
+          <div class="stock-bar"><div class="stock-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+        </div>
+      </td>
+      <td style="font-family:'DM Mono',monospace;font-size:13px;color:var(--muted)">${m.stock_minimo}</td>
+      <td><span class="tag ${tagCls}">${tagTxt}</span></td>
+      <td><button class="icon-btn" onclick="openMovModal('${m.id}')">+ Mov.</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function renderMovimientos(){
+  const el = document.getElementById('mov-list');
+  if(!movimientos.length){ el.innerHTML='<div class="empty">Sin movimientos registrados</div>'; return; }
+  el.innerHTML = movimientos.map(m => {
+    const nombre = m.materias_primas?.nombre || '—';
+    const unidad = m.materias_primas?.unidad || '';
+    const fecha = new Date(m.created_at).toLocaleDateString('es-AR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+    return `<div class="mov-item">
+      <span class="mov-type mov-${m.tipo}">${m.tipo}</span>
+      <div class="mov-info">
+        <div class="mov-name">${nombre}</div>
+        <div class="mov-detail">${m.motivo ? m.motivo+' · ' : ''}${m.usuario ? '@'+m.usuario+' · ':''} ${fecha}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="mov-qty">${m.cantidad}</div>
+        <div class="mov-qty-unit">${unidad}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAlertas(){
+  const el = document.getElementById('alertas-list');
+  const altas = materias.filter(m => m.stock_actual < m.stock_minimo);
+  if(!altas.length){ el.innerHTML='<div style="text-align:center;padding:3rem;color:var(--ok)">✓ Todo el stock está sobre el mínimo</div>'; return; }
+  el.innerHTML = altas.map(m => `
+    <div class="alert-card">
+      <div>
+        <div class="alert-card-name">${m.nombre}</div>
+        <div class="alert-card-detail">Stock actual: ${m.stock_actual} ${m.unidad} · Mínimo: ${m.stock_minimo} ${m.unidad}</div>
+      </div>
+      <span class="alert-badge">Bajo mínimo</span>
+    </div>`).join('');
+}
+
+function updateStats(){
+  const alertas = materias.filter(m=>m.stock_actual < m.stock_minimo);
+  document.getElementById('s-total').textContent = materias.length;
+  document.getElementById('s-ok').textContent = materias.length - alertas.length;
+  document.getElementById('s-alerta').textContent = alertas.length;
+  document.getElementById('s-mov').textContent = movimientos.length;
+}
+
+function updateAlertBadge(){
+  const alertas = materias.filter(m=>m.stock_actual < m.stock_minimo);
+  const b = document.getElementById('alert-badge');
+  if(alertas.length){ b.style.display='inline'; b.textContent=alertas.length; }
+  else b.style.display='none';
+}
+
+function switchTab(name){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  document.querySelectorAll('nav button').forEach((b,i)=>{ b.classList.remove('active'); });
+  const idx = {stock:0,movimientos:1,alertas:2}[name];
+  document.querySelectorAll('nav button')[idx].classList.add('active');
+}
+
+function openModal(id){ document.getElementById('modal-'+id).style.display='flex'; }
+function closeModalById(id){ document.getElementById('modal-'+id).style.display='none'; }
+function closeModal(e,id){ if(e.target===document.getElementById('modal-'+id)) closeModalById(id); }
+
+function openMovModal(mpId){
+  openModal('nuevo-mov');
+  toggleMotivo();
+  if(mpId){
+    const sel = document.getElementById('mov-mp');
+    if(sel) sel.value = mpId;
+  }
+}
+
+function toggleMotivo(){
+  const tipo = document.getElementById('mov-tipo').value;
+  document.getElementById('motivo-field').style.display = tipo==='ajuste' ? 'block' : 'none';
+}
+
+function showMsg(id, msg, ok){
+  const el=document.getElementById(id);
+  el.className = ok ? 'form-success' : 'form-error';
+  el.textContent = msg;
+}
+
+async function crearMateriaPrima(){
+  const nombre = document.getElementById('mp-nombre').value.trim();
+  const unidad = document.getElementById('mp-unidad').value;
+  const stock_actual = parseFloat(document.getElementById('mp-stock').value)||0;
+  const stock_minimo = parseFloat(document.getElementById('mp-min').value)||0;
+  try{
+    await api('/materias-primas',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nombre,unidad,stock_actual,stock_minimo})});
+    showMsg('mp-msg','Materia prima creada correctamente.',true);
+    await loadMaterias();
+    updateStats();
+    setTimeout(()=>closeModalById('nueva-mp'),1200);
+  }catch(e){ showMsg('mp-msg',e.message,false); }
+}
+
+async function registrarMovimiento(){
+  const materia_prima_id = document.getElementById('mov-mp').value;
+  const tipo = document.getElementById('mov-tipo').value;
+  const cantidad = parseFloat(document.getElementById('mov-cantidad').value);
+  const motivo = document.getElementById('mov-motivo').value.trim()||undefined;
+  const usuario = document.getElementById('mov-usuario').value.trim()||undefined;
+  try{
+    const r = await api('/movimientos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({materia_prima_id,tipo,cantidad,motivo,usuario})});
+    let msg = 'Movimiento registrado.';
+    if(r.alerta) msg += ' ⚠ '+r.alerta.mensaje;
+    showMsg('mov-msg',msg,!r.alerta);
+    await loadAll();
+    setTimeout(()=>closeModalById('nuevo-mov'),1500);
+  }catch(e){ showMsg('mov-msg',e.message,false); }
+}
+
+function populateMpSelect(){
+  const sel = document.getElementById('mov-mp');
+  sel.innerHTML = materias.map(m=>`<option value="${m.id}">${m.nombre} (${m.stock_actual} ${m.unidad})</option>`).join('');
+}
+
+document.getElementById('modal-nuevo-mov').addEventListener('show',populateMpSelect);
+const origOpen = openModal;
+window.openModal = function(id){
+  origOpen(id);
+  if(id==='nuevo-mov'){
+    populateMpSelect();
+    document.getElementById('mov-msg').textContent='';
+    document.getElementById('mov-msg').className='';
+  }
+  if(id==='nueva-mp'){
+    document.getElementById('mp-msg').textContent='';
+    document.getElementById('mp-msg').className='';
+    document.getElementById('mp-nombre').value='';
+    document.getElementById('mp-stock').value='0';
+    document.getElementById('mp-min').value='0';
+  }
+};
+
+loadAll();
+</script>
+</body>
+</html>
